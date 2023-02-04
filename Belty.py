@@ -1,62 +1,60 @@
-import RPi.GPIO as GPIO
+import pigpio
 import time as time
 
+
 class BeltControl:
-   def __init__(self, servo_pin: int = 35):
-      self._servo_pin: int = servo_pin
+    def __init__(self, servo_pin: int = 19):
+        self.servo_pin: int = servo_pin
 
-      GPIO.setmode(GPIO.BOARD)
-      GPIO.setup(servo_pin, GPIO.OUT)
+        self.pi_control = pigpio.pi()
 
-      self.servo = GPIO.PWM(servo_pin,500)
+    def __del__(self):
+        self.stop()
 
-   def __del__(self):
-      self.servo.start(0)
-      self.servo.stop()
+    def left(self):
+        self.pi_control.set_servo_pulsewidth(self.servo_pin, 1500)
 
-   def left(self):
-      self.servo.start(80)
+    def right(self):
+        self.pi_control.set_servo_pulsewidth(self.servo_pin, 500)
 
-   def right(self):
-      self.servo.start(30)
-
-   def stop(self):
-      self.servo.start(0)
-
+    def stop(self):
+        self.pi_control.set_servo_pulsewidth(self.servo_pin, 0)
+        self.pi_control.stop()
 
 
 class CameraControl:
-   def __init__(self, pan_pin: int = 33, tilt_pin: int = 32):
-      self.pan_pin = pan_pin
-      self.tilt_pin = tilt_pin
+    def __init__(self, pan_pin: int = 13, tilt_pin: int = 21):
+        self.pan_pin = pan_pin
+        self.tilt_pin = tilt_pin
 
-      GPIO.setmode(GPIO.BOARD)
-      GPIO.setup(self.pan_pin, GPIO.OUT)
-      GPIO.setup(self.tilt_pin, GPIO.OUT)
+        self.pi_control = pigpio.pi()
+        
+    def __del__(self):
+        self.stop()
 
-      self.servo_pan = GPIO.PWM(self.pan_pin,500)
-      self.servo_tilt = GPIO.PWM(self.tilt_pin,500)
+    # Move camera
+    # \param pan: value from 0 to 100
+    # \param tilt: value from 0 to 100
+    def move(self, pan: int, tilt: int):
+        self.pi_control.set_servo_pulsewidth(self.pan_pin, self._map_value(pan, 500, 2500))
+        self.pi_control.set_servo_pulsewidth(self.tilt_pin, self._map_value(tilt, 800, 2000))
 
-   def __del__(self):
-      self.stop()
+    def stop(self):
+        self.pi_control.stop()
 
-   def move(self, pan: int, tilt: int):
-      self.servo_pan.start(pan)
-      self.servo_tilt.start(tilt)
+    def _map_value(self, val, min, max):
+        return min + val/100.0*(max - min)
 
-   def stop(self):
-      self.servo_pan.stop()
-      self.servo_tilt.stop()
 
 if __name__ == "__main__":
-   ctl: BeltControl = BeltControl()
+    ctl: BeltControl = BeltControl()
 
-   ctl.stop()
+    ctl.stop()
 
-   for i in range(5):
-      ctl.left()
-      time.sleep(2)
-      ctl.right()
-      time.sleep(2)
-      
-   ctl.stop()
+    for i in range(5):
+        ctl.left()
+        time.sleep(2)
+        ctl.right()
+        time.sleep(2)
+
+    ctl.stop()
