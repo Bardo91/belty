@@ -26,6 +26,15 @@ class BotCommanderAdvanced:
         persistency: Persistency = Persistency()
         self.__root_dir : str = persistency.defaultDir()
         self.__photos_dir = self.__root_dir + "/photos"
+
+        # Load whitelist
+        with open(telegram_toke_file_path, "r") as file:
+            filename: str = self.__root_dir + "/belty_whitelist.txt"
+            self.__whitelist = set([])
+            for line in file.readlines():
+                self.__whitelist.add(line)
+            print(f"Whitelist: {self.__whitelist}")
+
         # persistency.createDirs(self.__photos_dir)
         # Get token from configuration dir and init BotComander
         telegram_toke_file_path : str = self.__root_dir + "/belty.tk"
@@ -41,6 +50,8 @@ class BotCommanderAdvanced:
 
                 # Init belty
                 self.__ctl: BeltControl = BeltControl()
+
+                
 
         else:
             logger.critical("{telegram_toke_file_path} file missing. Please place your " +
@@ -61,11 +72,15 @@ class BotCommanderAdvanced:
 
         if message is not None:
             if message.startswith('/'): 
-                # If it is a command, execute it
-                self.__parseCommand(userid, chatid, message, update, context)
+                if userid in self.__whitelist:
+                    # If it is a command, execute it
+                    self.__parseCommand(userid, chatid, message, update, context)
+                else:
+                    update.message.reply_text(f"Userid {userid} is not in whitelist")
             else:
                 # Not a command, store it
                 self.__last_user_message[userid] = message
+                update.message.reply_text("Please, send a valid command. Type /help for more info.")
         
 
     def __parseCommand(self, userid : int, chatid : int, command: str, update: Update, context: CallbackContext):
@@ -113,4 +128,7 @@ class BotCommanderAdvanced:
         # Generate image
         if result.returncode == 0:
             context.bot.send_photo(chatid, photo=open(filename, 'rb'))
+
+    def __checkWhitelist(self):
+        pass
 
