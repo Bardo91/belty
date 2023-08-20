@@ -28,11 +28,11 @@ class BotCommanderAdvanced:
         self.__photos_dir = self.__root_dir + "/photos"
 
         # Load whitelist
-        with open(telegram_toke_file_path, "r") as file:
-            filename: str = self.__root_dir + "/belty_whitelist.txt"
+        whitelist_filename: str = self.__root_dir + "/belty_whitelist.txt"
+        with open(whitelist_filename, "r") as file:
             self.__whitelist = set([])
             for line in file.readlines():
-                self.__whitelist.add(line)
+                self.__whitelist.add(int(line))
             print(f"Whitelist: {self.__whitelist}")
 
         # persistency.createDirs(self.__photos_dir)
@@ -67,7 +67,7 @@ class BotCommanderAdvanced:
 
     def handleMsg(self, update: Update, context: CallbackContext):
         message : str= update.message.text
-        userid : int = update.message.from_user
+        userid : int = update.message.from_user["id"]
         chatid : int = update.message.chat_id
 
         if message is not None:
@@ -78,8 +78,7 @@ class BotCommanderAdvanced:
                 else:
                     update.message.reply_text(f"Userid {userid} is not in whitelist")
             else:
-                # Not a command, store it
-                self.__last_user_message[userid] = message
+                # Not a command
                 update.message.reply_text("Please, send a valid command. Type /help for more info.")
         
 
